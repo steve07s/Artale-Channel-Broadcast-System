@@ -1,0 +1,41 @@
+# Python cache
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environment
+.venv/
+env/
+venv/
+ENV/
+*.egg-info/
+
+# VSCode/IDE 設定檔
+.vscode/
+.idea/
+*.code-workspace
+
+# 系統檔案
+.DS_Store
+Thumbs.db
+
+# WebSocket 執行快取（如使用 logs/debug 模式）
+*.log
+*.tmp
+
+# 測試封包記錄或臨時封包擷取檔（如有）
+*.pcap
+*.hex.txt
+*.dump
+
+# 憑證/金鑰等（如日後加入 TLS）
+*.pem
+*.crt
+*.key
+
+# 編譯或打包產物
+dist/
+build/
+*.egg

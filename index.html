@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <title>Artale 公共頻道外接系統</title>
+  <style>
+    body {
+      background-color: #121212;
+      font-family: 'Segoe UI', sans-serif;
+      color: #e0e0e0;
+      margin: 0;
+      padding: 20px;
+    }
+    h2 {
+      margin-bottom: 20px;
+      color: #00ffd0;
+    }
+    #log {
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .msg-card {
+      background-color: #1f1f1f;
+      border-left: 4px solid #00ffd0;
+      padding: 12px 16px;
+      border-radius: 6px;
+      box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
+      position: relative;
+    }
+    .msg-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 4px;
+    }
+    .timestamp {
+      font-size: 0.9em;
+      color: #888;
+    }
+    .meta {
+      font-size: 0.85em;
+      color: #ccc;
+    }
+    .meta span {
+      margin-left: 10px;
+      color: #00ffd0;
+    }
+    .nickname {
+      font-weight: bold;
+      color: #58a6ff;
+    }
+    .text {
+      margin-top: 4px;
+      white-space: pre-wrap;
+    }
+    .tag-button {
+      display: inline-block;
+      background-color: #2c2c2c;
+      color: #aaa;
+      padding: 2px 8px;
+      font-size: 0.75em;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 8px;
+      transition: background 0.2s;
+    }
+    .tag-button:hover {
+      background-color: #444;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+  <h2>📡 Artale 公共頻道外接系統</h2>
+  <div id="log"></div>
+
+  <script>
+    const logDiv = document.getElementById("log");
+    const ws = new WebSocket("ws://localhost:8765");
+
+    ws.onopen = () => console.log("✅ WebSocket 連線成功");
+    ws.onclose = () => console.log("🔌 WebSocket 已關閉");
+
+    ws.onmessage = (event) => {
+      const data = JSON.parse(event.data);
+      const ts = data.timestamp || "";
+      const nick = data.Nickname || "";
+      const text = data.Text || "";
+      const channel = data.Channel || "";
+      const profileCode = data.ProfileCode || "";
+      const friendTag = `${nick}#${profileCode}`;
+
+      const card = document.createElement("div");
+      card.className = "msg-card";
+
+      card.innerHTML = `
+        <div class="msg-header">
+          <div class="timestamp">${ts}</div>
+          <div class="meta">
+            <span>${channel}</span>
+            <span>識別碼: ${userId}</span>
+            <span class="tag-button" onclick="copyToClipboard('${friendTag}', this)">複製好友</span>
+          </div>
+        </div>
+        <div><span class="nickname">${nick}</span>: <span class="text">${text}</span></div>
+      `;
+
+      logDiv.appendChild(card);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    };
+
+    function copyToClipboard(text, el) {
+      navigator.clipboard.writeText(text).then(() => {
+        const original = el.textContent;
+        el.textContent = "✅ 已複製";
+        setTimeout(() => el.textContent = original, 1200);
+      });
+    }
+  </script>
+</body>
+</html>
