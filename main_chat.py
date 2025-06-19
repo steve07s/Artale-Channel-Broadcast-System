@@ -62,39 +62,15 @@ class ChatParser:
                     if type_tag == 4:
                         try:
                             out[name] = data[v_start:v_end].decode("utf-8", "replace")
+                            if name=='Text':
+                                channel =int.from_bytes(data[v_end+1:v_end+4], "little")
+                                out['Channel'] = f"CH{channel}"
                         except Exception:
-                            out[name] = f"[INVALID UTF8]"
+                            out[name] = "[INVALID UTF8]"
                 elif name.startswith("#") and name_len == 7:
                     colors.append(name)
 
             i = v_end
-
-        # 第二輪：只處理 Channel（type_tag 1 byte, value 為 CH編號）
-        j = 0
-        while j + 4 <= L:
-            name_len = int.from_bytes(data[j:j+4], "little")
-            if not 0 < name_len <= 64 or j + 4 + name_len + 5 > L:
-                j += 1
-                continue
-
-            try:
-                name = data[j+4:j+4+name_len].decode("ascii")
-            except UnicodeDecodeError:
-                j += 1
-                continue
-
-            if name == "Channel":
-                cur = j + 4 + name_len
-                type_tag = data[cur]
-                val_len = int.from_bytes(data[cur+1:cur+5], "little")
-
-                print(f"[j={j}, cur={cur}] Channel type_tag={type_tag}, channel_id={val_len}")
-                print("RAW:", ' '.join(f"{b:02X}" for b in data[j:cur+5]))
-
-                if type_tag == 2 and 0 < val_len < 9999:
-                    out["Channel"] = f"CH{val_len}"
-                    break
-            j += 1
 
         if colors:
             out["color1"] = colors[0]
@@ -103,7 +79,7 @@ class ChatParser:
 
         # --- 剩餘 float32 ---
         floats = []
-        k = max(i, j)
+        k = max(i, v_end)
         while k + 4 <= L:
             floats.append(struct.unpack_from("<f", data, k)[0])
             k += 4
