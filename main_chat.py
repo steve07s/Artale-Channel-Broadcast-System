@@ -25,13 +25,14 @@ if LIVE_CAPTURE:
 
 class ChatParser:
     KNOWN = {
-        "Nickname", "Channel","Text", "Type", "ProfileCode", "UserId"
+        "Nickname", "Text", "Type", "ProfileCode", "UserId"
     }
 
     @staticmethod
     def _parse_struct(data: bytes) -> dict:
         out, colors = {}, []
         i, L = 0, len(data)
+        v_start, v_end = None, None
         MAX_VAL_LEN = 256  # 防止亂長 value 拖垮封包
 
         # --- 第一輪：處理所有欄位（除了 Channel） ---
@@ -71,15 +72,16 @@ class ChatParser:
                     colors.append(name)
 
             i = v_end
-
         if colors:
             out["color1"] = colors[0]
         if len(colors) > 1:
             out["color2"] = colors[1]
-
         # --- 剩餘 float32 ---
         floats = []
-        k = max(i, v_end)
+        if v_end == None:
+            k = i
+        else:
+            k = max(i, v_end)
         while k + 4 <= L:
             floats.append(struct.unpack_from("<f", data, k)[0])
             k += 4
