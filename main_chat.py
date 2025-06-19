@@ -62,6 +62,9 @@ class ChatParser:
                     if type_tag == 4:
                         try:
                             out[name] = data[v_start:v_end].decode("utf-8", "replace")
+                            if name == "UserId":
+                                channel = int.from_bytes(data[v_end+1:v_end+3], "little")
+                                out["Channel"] = f"CH{channel}"
                         except Exception:
                             out[name] = f"[INVALID UTF8]"
                 elif name.startswith("#") and name_len == 7:
@@ -82,18 +85,7 @@ class ChatParser:
             except UnicodeDecodeError:
                 j += 1
                 continue
-
-            if name == "Channel":
-                cur = j + 4 + name_len
-                type_tag = data[cur]
-                val_len = int.from_bytes(data[cur+1:cur+5], "little")
-
-                print(f"[j={j}, cur={cur}] Channel type_tag={type_tag}, channel_id={val_len}")
-                print("RAW:", ' '.join(f"{b:02X}" for b in data[j:cur+5]))
-
-                if type_tag == 2 and 0 < val_len < 9999:
-                    out["Channel"] = f"CH{val_len}"
-                    break
+            
             j += 1
 
         if colors:
