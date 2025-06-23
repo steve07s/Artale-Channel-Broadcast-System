@@ -67,7 +67,7 @@ class ChatParser:
 
         # 新增時間戳
         now = datetime.datetime.now()
-        out["timestamp"] = now.strftime("[%Y-%m-%d %H:%M:%S]")
+        out["timestamp"] = now.strftime("%Y-%m-%d %H:%M:%S")
 
         # 精確抓頻道（尾段特徵：02 XX XX XX XX 04）
         for k in range(len(data) - 6):
