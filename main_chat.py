@@ -70,40 +70,61 @@ class ChatParser:
             i = v_end
 
         # 第二輪：只處理 Channel（type_tag 1 byte, value 為 CH編號）
-        j = 0
-        while j + 4 <= L:
-            name_len = int.from_bytes(data[j:j+4], "little")
-            if not 0 < name_len <= 64 or j + 4 + name_len + 5 > L:
-                j += 1
-                continue
+        # j = 0
+        # while j + 4 <= L:
+        #     name_len = int.from_bytes(data[j:j+4], "little")
+        #     if not 0 < name_len <= 64 or j + 4 + name_len + 5 > L:
+        #         j += 1
+        #         continue
 
-            try:
-                name = data[j+4:j+4+name_len].decode("ascii")
-            except UnicodeDecodeError:
-                j += 1
-                continue
+        #     try:
+        #         name = data[j+4:j+4+name_len].decode("ascii")
+        #     except UnicodeDecodeError:
+        #         j += 1
+        #         continue
 
-            if name == "Channel":
-                cur = j + 4 + name_len
-                type_tag = data[cur]
-                val_len = int.from_bytes(data[cur+1:cur+5], "little")
+        #     if name == "Channel":
+        #         cur = j + 4 + name_len
+        #         type_tag = data[cur]
+        #         val_len = int.from_bytes(data[cur+1:cur+5], "little")
 
-                print(f"[j={j}, cur={cur}] Channel type_tag={type_tag}, channel_id={val_len}")
-                print("RAW:", ' '.join(f"{b:02X}" for b in data[j:cur+5]))
+        #         print(f"[j={j}, cur={cur}] Channel type_tag={type_tag}, channel_id={val_len}")
+        #         print("RAW:", ' '.join(f"{b:02X}" for b in data[j:cur+5]))
 
-                if type_tag == 2 and 0 < val_len < 9999:
-                    out["Channel"] = f"CH{val_len}"
-                    break
-            j += 1
+        #         if type_tag == 2 and 0 < val_len < 9999:
+        #             out["Channel"] = f"CH{val_len}"
+        #             break
+        #     j += 1
 
         if colors:
             out["color1"] = colors[0]
         if len(colors) > 1:
             out["color2"] = colors[1]
 
+        scan = 0
+        while scan + 12 <= L:
+            if data[scan] == 2:
+                try:
+                    val_int = int.from_bytes(data[scan+1:scan+5], 'little')
+                    next_type = data[scan+5]
+                    next_len  = int.from_bytes(data[scan+6:scan+10], 'little')
+
+                    if (1 <= val_int <= 9999 and
+                        next_type == 4 and
+                        1 <= next_len <= 8 and
+                        data[scan+10:scan+11].startswith(b'#')):
+
+                        if "Channel" not in out:
+                            out["Channel"] = f"CH{val_int}"
+                            print(f"✅ 額外結構偵測頻道：CH{val_int} (於 scan 位移 {scan})")
+                            break
+                except Exception as e:
+                    print(f"❌ scan 發生錯誤: {e}")
+            scan += 1
+
         # --- 剩餘 float32 ---
         floats = []
-        k = max(i, j)
+        k = i
         while k + 4 <= L:
             floats.append(struct.unpack_from("<f", data, k)[0])
             k += 4

@@ -1,124 +1,450 @@
 <!DOCTYPE html>
 <html lang="zh-Hant">
-<head>
-  <meta charset="UTF-8" />
-  <title>Artale 公共頻道外接系統</title>
-  <style>
-    body {
-      background-color: #121212;
-      font-family: 'Segoe UI', sans-serif;
-      color: #e0e0e0;
-      margin: 0;
-      padding: 20px;
-    }
-    h2 {
-      margin-bottom: 20px;
-      color: #00ffd0;
-    }
-    #log {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      max-height: 85vh;
-      overflow-y: auto;
-    }
-    .msg-card {
-      background-color: #1f1f1f;
-      border-left: 4px solid #00ffd0;
-      padding: 12px 16px;
-      border-radius: 6px;
-      box-shadow: 0 0 4px rgba(0, 0, 0, 0.6);
-      position: relative;
-    }
-    .msg-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      margin-bottom: 4px;
-    }
-    .timestamp {
-      font-size: 0.9em;
-      color: #888;
-    }
-    .meta {
-      font-size: 0.85em;
-      color: #ccc;
-    }
-    .meta span {
-      margin-left: 10px;
-      color: #00ffd0;
-    }
-    .nickname {
-      font-weight: bold;
-      color: #58a6ff;
-    }
-    .text {
-      margin-top: 4px;
-      white-space: pre-wrap;
-    }
-    .tag-button {
-      display: inline-block;
-      background-color: #2c2c2c;
-      color: #aaa;
-      padding: 2px 8px;
-      font-size: 0.75em;
-      border-radius: 4px;
-      cursor: pointer;
-      margin-left: 8px;
-      transition: background 0.2s;
-    }
-    .tag-button:hover {
-      background-color: #444;
-      color: #fff;
-    }
-  </style>
-</head>
-<body>
-  <h2>📡 Artale 公共頻道外接系統</h2>
-  <div id="log"></div>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Artale 公頻即時廣播</title>
+    <style>
+      body {
+        background: url("dark-wallpaper.jpg") no-repeat center center fixed;
+        background-size: cover;
+        font-family: "Noto Sans TC", "Microsoft JhengHei", sans-serif;
+        margin: 0;
+        padding: 2rem;
+        color: #fff;
+      }
+      .container {
+        background-color: rgba(0, 0, 0, 0.85);
+        border-radius: 8px;
+        padding: 1rem 1.5rem;
+        max-width: 1000px;
+        height: 820px;
+        margin: auto;
+        display: flex;
+        flex-direction: column;
+      }
+      h1 {
+        color: #ffd369;
+        font-size: 1.5rem;
+        margin-bottom: 1rem;
+      }
+      .filters {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+        align-items: center;
+      }
+      .filters input[type="text"],
+      .filters input[type="number"],
+      .filters select {
+        background-color: #2d2d2d;
+        color: #fff;
+        border: 1px solid #555;
+      }
+      #channelFilter {
+        width: 80px;
+      }
+      #maxCount {
+        width: 40px;
+      }
+      .filters input,
+      .filters select,
+      .filters label,
+      .filters button {
+        padding: 0.4rem;
+        border-radius: 4px;
+        font-size: 0.9rem;
+      }
+      .hidden {
+        display: none;
+      }
+      #messagesContainer {
+        flex: 1;
+        overflow-y: auto;
+        padding-right: 10px;
+      }
+      .message {
+        padding: 0.3rem 0;
+        border-bottom: 1px solid #444;
+        position: relative;
+      }
+      .message-both::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 50%;
+        height: 100%;
+        background-color: rgba(255, 50, 50, 0.08);
+        z-index: 0;
+      }
+      .message-both::after {
+        content: "";
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 50%;
+        height: 100%;
+        background-color: rgba(100, 255, 100, 0.08);
+        z-index: 0;
+      }
+      .message > * {
+        position: relative;
+        z-index: 1;
+      }
+      .channel {
+        color: #ffb84d;
+        margin-right: 0.5rem;
+        font-weight: bold;
+      }
+      .username {
+        color: #ffd369;
+        margin-right: 0.5rem;
+      }
+      .text {
+        color: #ddd;
+      }
+      .highlight-force {
+        color: #ff6b6b;
+      }
+      .highlight-dex {
+        color: #6bff6b;
+      }
+      .highlight-int {
+        color: #6baeff;
+      }
+      .highlight-luck {
+        color: #ffee6b;
+      }
+      .highlight-atk {
+        color: #6bf7ff;
+      }
+      .highlight-extra {
+        color: #ffa96b;
+      }
+      .highlight-sell {
+        background-color: rgba(255, 100, 100, 0.2);
+      }
+      .highlight-buy {
+        background-color: rgba(100, 255, 100, 0.2);
+      }
+      .timestamp {
+        font-size: 0.8rem;
+        color: #aaa;
+      }
+      .pinned {
+        background-color: rgba(255, 255, 0, 0.1);
+        border-left: 3px solid yellow;
+      }
+      .btn-toggle {
+        background-color: #444;
+        color: #fff;
+        border: 1px solid #666;
+        cursor: pointer;
+      }
+      .btn-toggle.active {
+        background-color: #ffd369;
+        color: #000;
+      }
+      ::-webkit-scrollbar {
+        width: 8px;
+      }
+      ::-webkit-scrollbar-thumb {
+        background-color: #888;
+        border-radius: 4px;
+      }
+      ::-webkit-scrollbar-track {
+        background-color: transparent;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Artale 公頻即時廣播</h1>
+      <div class="filters">
+        <button id="toggleBlacklist" class="btn-toggle">🛠 黑名單</button>
+        <input
+          type="text"
+          id="blacklistInput"
+          class="hidden"
+          placeholder="⛔ 黑名單 (空格分隔)"
+        />
+        <input type="text" id="channelFilter" placeholder="🔍 頻道" />
+        <input type="text" id="keywords" placeholder="🔍 多關鍵字" />
+        <button id="filterBuy" class="btn-toggle">只看收</button>
+        <button id="filterSell" class="btn-toggle">只看賣</button>
+        <select id="mode">
+          <option value="union">聯集</option>
+          <option value="intersect">交集</option>
+        </select>
+        <input
+          type="number"
+          id="maxCount"
+          placeholder="筆數"
+          value="50"
+          min="1"
+          max="500"
+        />
+        <button id="toggleNotify" class="btn-toggle">🔕 推播關閉</button>
+        <button id="toggleAuto" class="btn-toggle active">⟳ 自動更新</button>
+        <button id="toggleSort" class="btn-toggle active">🔃 新→舊排序</button>
+      </div>
+      <div id="messagesContainer">
+        <div id="messages"></div>
+      </div>
+    </div>
 
-  <script>
-    const logDiv = document.getElementById("log");
-    const ws = new WebSocket("ws://localhost:8765");
+    <script>
+      const notifiedSet = new Set();
 
-    ws.onopen = () => console.log("✅ WebSocket 連線成功");
-    ws.onclose = () => console.log("🔌 WebSocket 已關閉");
+      const ws = new WebSocket("ws://localhost:8765");
+      const messagesDiv = document.getElementById("messages");
+      const channelFilterInput = document.getElementById("channelFilter");
+      const keywordInput = document.getElementById("keywords");
+      const maxCountInput = document.getElementById("maxCount");
+      const modeSelect = document.getElementById("mode");
+      const blacklistInput = document.getElementById("blacklistInput");
+      const toggleAutoBtn = document.getElementById("toggleAuto");
+      const toggleSortBtn = document.getElementById("toggleSort");
+      const toggleBlacklistBtn = document.getElementById("toggleBlacklist");
+      const filterBuyBtn = document.getElementById("filterBuy");
+      const filterSellBtn = document.getElementById("filterSell");
+      const toggleNotifyBtn = document.getElementById("toggleNotify");
 
-    ws.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      const ts = data.timestamp || "";
-      const nick = data.Nickname || "";
-      const text = data.Text || "";
-      const channel = data.Channel || "";
-      const profileCode = data.ProfileCode || "";
-      const friendTag = `${nick}#${profileCode}`;
+      let autoRefresh = true;
+      let sortDesc = true;
+      let allMessages = [];
+      let filterMode = null;
+      let notifyEnabled = false;
+      const pinned = new Set();
 
-      const card = document.createElement("div");
-      card.className = "msg-card";
-
-      card.innerHTML = `
-        <div class="msg-header">
-          <div class="timestamp">${ts}</div>
-          <div class="meta">
-            <span>${channel}</span>
-            <span>識別碼: ${profileCode}</span>
-            <span class="tag-button" onclick="copyToClipboard('${friendTag}', this)">複製好友</span>
-          </div>
-        </div>
-        <div><span class="nickname">${nick}</span>: <span class="text">${text}</span></div>
-      `;
-
-      logDiv.appendChild(card);
-      logDiv.scrollTop = logDiv.scrollHeight;
-    };
-
-    function copyToClipboard(text, el) {
-      navigator.clipboard.writeText(text).then(() => {
-        const original = el.textContent;
-        el.textContent = "✅ 已複製";
-        setTimeout(() => el.textContent = original, 1200);
+      toggleAutoBtn.addEventListener("click", () => {
+        autoRefresh = !autoRefresh;
+        toggleAutoBtn.classList.toggle("active", autoRefresh);
       });
-    }
-  </script>
-</body>
+
+      toggleSortBtn.addEventListener("click", () => {
+        sortDesc = !sortDesc;
+        toggleSortBtn.classList.toggle("active", sortDesc);
+        toggleSortBtn.textContent = sortDesc ? "🔃 新→舊排序" : "🔃 舊→新排序";
+        renderMessages();
+      });
+
+      toggleBlacklistBtn.addEventListener("click", () => {
+        blacklistInput.classList.toggle("hidden");
+      });
+
+      filterBuyBtn.addEventListener("click", () => {
+        filterMode = filterMode === "buy" ? null : "buy";
+        filterBuyBtn.classList.toggle("active", filterMode === "buy");
+        filterSellBtn.classList.remove("active");
+        renderMessages();
+      });
+
+      filterSellBtn.addEventListener("click", () => {
+        filterMode = filterMode === "sell" ? null : "sell";
+        filterSellBtn.classList.toggle("active", filterMode === "sell");
+        filterBuyBtn.classList.remove("active");
+        renderMessages();
+      });
+
+      toggleNotifyBtn.addEventListener("click", () => {
+        notifyEnabled = !notifyEnabled;
+        toggleNotifyBtn.classList.toggle("active", notifyEnabled);
+        toggleNotifyBtn.textContent = notifyEnabled
+          ? "🔔 推播開啟"
+          : "🔕 推播關閉";
+        if (notifyEnabled && Notification.permission === "default") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              console.log("推播已授權");
+            }
+          });
+        }
+      });
+
+      function showNotification(msg) {
+        if (!notifyEnabled || Notification.permission !== "granted") return;
+        const hasBuy = /收|買/.test(msg.text);
+        const hasSell = /出|售|賣/.test(msg.text);
+        if (!hasBuy && !hasSell) return;
+        const title = `想要的${hasBuy ? " 收" : ""}${
+          hasSell ? " 出" : ""
+        } 出現！`;
+        const body = `${msg.username}: ${msg.text}`;
+        const notification = new Notification(title, {
+          body,
+          icon: "/favicon.ico",
+        });
+        notification.onclick = () => window.focus();
+      }
+
+      function renderMessages() {
+        const keywords = keywordInput.value
+          .trim()
+          .split(/\s+/)
+          .filter((k) => k);
+        const blackList = getBlacklist();
+        const mode = modeSelect.value;
+        const maxCount = parseInt(maxCountInput.value, 10) || 50;
+        const channelFilter = channelFilterInput.value.trim();
+
+        let shown = [...allMessages].filter((msg) => {
+          if (blackList.some((b) => msg.text.includes(b))) return false;
+          if (channelFilter && !msg.channel.includes(channelFilter))
+            return false;
+          if (filterMode === "buy" && !/收|買/.test(msg.text)) return false;
+          if (filterMode === "sell" && !/出|售|賣/.test(msg.text)) return false;
+          if (keywords.length > 0) {
+            const lc = msg.text.toLowerCase();
+            const matches = keywords.map((k) => lc.includes(k.toLowerCase()));
+            if (mode === "intersect" && matches.some((m) => !m)) return false;
+            if (mode === "union" && matches.every((m) => !m)) return false;
+          }
+          return true;
+        });
+
+        if (sortDesc)
+          shown.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+        else
+          shown.sort((a, b) => new Date(a.timestamp) - new Date(b.timestamp));
+
+        const pinnedMsgs = shown.filter((msg) => pinned.has(msg.timestamp));
+        const normalMsgs = shown.filter((msg) => !pinned.has(msg.timestamp));
+        const finalMsgs = [...pinnedMsgs, ...normalMsgs].slice(0, maxCount);
+        finalMsgs.forEach((msg) => {
+          if (!notifiedSet.has(msg.timestamp)) {
+            notifiedSet.add(msg.timestamp);
+            showNotification(msg);
+          }
+        });
+
+        messagesDiv.innerHTML = finalMsgs
+          .map((msg) => {
+            const pinClass = pinned.has(msg.timestamp) ? "pinned" : "";
+            const hasSell = /出|售|賣/.test(msg.text);
+            const hasBuy = /收|買/.test(msg.text);
+            let styleClass = "";
+            if (hasSell && hasBuy) styleClass = "message-both";
+            else if (hasSell) styleClass = "highlight-sell";
+            else if (hasBuy) styleClass = "highlight-buy";
+            return `<div class="message ${pinClass} ${styleClass}" onclick="pin('${
+              msg.timestamp
+            }')">
+                <span class="channel">[${msg.channel}]</span>
+                <span class="username">${msg.username}</span>
+                <span class="text">${highlight(msg.text)}</span>
+                <div class="timestamp">🕒 ${new Date(
+                  msg.timestamp
+                ).toLocaleString("zh-TW")}</div>
+              </div>`;
+          })
+          .join("");
+      }
+
+      function pin(ts) {
+        if (pinned.has(ts)) pinned.delete(ts);
+        else pinned.add(ts);
+        renderMessages();
+      }
+
+      function highlight(text) {
+        const rules = [
+          { keywords: ["力量", "力"], className: "highlight-force" },
+          { keywords: ["敏捷", "敏"], className: "highlight-dex" },
+          { keywords: ["智力", "智"], className: "highlight-int" },
+          { keywords: ["幸運", "幸"], className: "highlight-luck" },
+          { keywords: ["攻擊", "攻", "AD", "AP"], className: "highlight-atk" },
+          {
+            keywords: ["屬性", "屬", "速度", "速", "迴避", "迴", "跳躍", "跳"],
+            className: "highlight-extra",
+          },
+        ];
+        text = text.replace(/雪鞋/g, "__TEMP_SNOW_BOOTS__");
+        rules.forEach((rule) => {
+          rule.keywords.forEach((kw) => {
+            text = text.replaceAll(
+              kw,
+              `<span class="${rule.className}">${kw}</span>`
+            );
+          });
+        });
+        text = text.replace(/__TEMP_SNOW_BOOTS__/g, "雪鞋");
+        return text;
+      }
+
+      function getBlacklist() {
+        const value = blacklistInput.value.trim();
+        localStorage.setItem("blacklist", value);
+        return value.split(/\s+/).filter((k) => k);
+      }
+
+      function loadBlacklist() {
+        const stored = localStorage.getItem("blacklist");
+        if (stored) blacklistInput.value = stored;
+      }
+
+      ws.onmessage = (event) => {
+        try {
+          if (!autoRefresh) return;
+          const raw = JSON.parse(event.data);
+          let parsedData = [];
+
+          if (Array.isArray(raw)) {
+            // 已是陣列格式（新版）
+            parsedData = raw;
+          } else if (typeof raw === "object" && raw.Nickname && raw.Text) {
+            // 舊版格式：轉換成新版格式
+            parsedData = [
+              {
+                timestamp: raw.timestamp || new Date().toISOString(),
+                channel: raw.Channel || "",
+                username: `${raw.Nickname}${
+                  raw.ProfileCode ? "#" + raw.ProfileCode : ""
+                }`,
+                text: raw.Text || "",
+              },
+            ];
+          } else {
+            console.warn("未知格式：", raw);
+            return;
+          }
+
+          allMessages.unshift(...parsedData);
+          allMessages = allMessages.slice(0, 1000);
+          renderMessages();
+        } catch (e) {
+          console.error("❌ WebSocket 處理錯誤：", e);
+        }
+      };
+
+      window.addEventListener("load", () => {
+        loadBlacklist();
+        renderMessages();
+      });
+      function requestNotificationPermission() {
+        if (Notification.permission === "default") {
+          Notification.requestPermission().then((permission) => {
+            if (permission === "granted") {
+              console.log("推播已授權");
+            }
+          });
+        }
+      }
+
+      document.addEventListener("DOMContentLoaded", () => {
+        requestNotificationPermission();
+        loadBlacklist();
+        renderMessages();
+
+        // ✅ 將這段放這裡才會在元素 ready 後綁定成功
+        [channelFilterInput, keywordInput, modeSelect, maxCountInput].forEach(
+          (el) => {
+            el.addEventListener("input", renderMessages);
+          }
+        );
+      });
+    </script>
+  </body>
 </html>

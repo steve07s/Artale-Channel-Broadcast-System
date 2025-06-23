@@ -30,19 +30,23 @@ class ChatParser:
         while i + 4 <= L:
             name_len = int.from_bytes(data[i:i+4], "little")
             if not 0 < name_len <= 64 or i + 4 + name_len + 6 > L:
-                i += 1; continue
+                i += 1
+                continue
 
             try:
                 name = data[i+4:i+4+name_len].decode("ascii")
             except UnicodeDecodeError:
-                i += 1; continue
+                i += 1
+                continue
 
             cur = i + 4 + name_len
             type_tag = int.from_bytes(data[cur:cur+2], "little")
-            val_len  = int.from_bytes(data[cur+2:cur+6], "little")
+            val_len = int.from_bytes(data[cur+2:cur+6], "little")
             v_start, v_end = cur + 6, cur + 6 + val_len
+
             if v_end > L or val_len > MAX_VAL_LEN:
-                i += 1; continue
+                i += 1
+                continue
 
             if name != "Channel":
                 if name in ChatParser.KNOWN:
@@ -56,42 +60,25 @@ class ChatParser:
 
             i = v_end
 
-        j = 0
-        while j + 4 <= L:
-            name_len = int.from_bytes(data[j:j+4], "little")
-            if not 0 < name_len <= 64 or j + 4 + name_len + 5 > L:
-                j += 1; continue
-            try:
-                name = data[j+4:j+4+name_len].decode("ascii")
-            except UnicodeDecodeError:
-                j += 1; continue
-
-            if name == "Channel":
-                cur = j + 4 + name_len
-                type_tag = data[cur]
-                val_len = int.from_bytes(data[cur+1:cur+5], "little")
-                if type_tag == 2 and 0 < val_len < 9999:
-                    out["Channel"] = f"CH{val_len}"
-                    break
-            j += 1
-
         if colors:
             out["color1"] = colors[0]
         if len(colors) > 1:
             out["color2"] = colors[1]
 
-        floats = []
-        k = max(i, j)
-        while k + 4 <= L:
-            floats.append(struct.unpack_from("<f", data, k)[0])
-            k += 4
-        out["floats"] = floats
-
         # 新增時間戳
         now = datetime.datetime.now()
         out["timestamp"] = now.strftime("[%Y-%m-%d %H:%M:%S]")
 
+        # 精確抓頻道（尾段特徵：02 XX XX XX XX 04）
+        for k in range(len(data) - 6):
+            if data[k] == 0x02 and data[k+5] == 0x04:
+                val = int.from_bytes(data[k+1:k+5], "little")
+                if 1 <= val <= 9999:
+                    out["Channel"] = f"CH{val}"
+                    break
+
         return out
+
 
     @classmethod
     def parse_packet_bytes(cls, blob: bytes) -> dict:
