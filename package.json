@@ -1,0 +1,31 @@
+{
+  "name": "maplestory_artale_chat_helper",
+  "version": "1.0.0",
+  "description": "🎮 用於楓之谷 Artale 伺服器的公共聊天訊息外接系統。透過封包分析，自動解析 TCP 封包中的頻道、暱稱、訊息等資訊，並以 WebSocket 推播給網頁前端與 Discord 頻道同步顯示。",
+  "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js",
+    "view": "serve -s . -l 5500",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "maplestory",
+    "artale",
+    "封包分析",
+    "websocket",
+    "discord-bot",
+    "聊天訊息",
+    "封包擷取",
+    "直播整合"
+  ],
+  "author": "你的名字或暱稱",
+  "license": "MIT",
+  "dependencies": {
+    "discord.js": "^14.20.0",
+    "dotenv": "^16.4.5",
+    "ws": "^8.18.2"
+  },
+  "devDependencies": {
+    "serve": "^14.2.1"
+  }
+}

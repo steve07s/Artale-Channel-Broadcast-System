@@ -39,3 +39,7 @@ Thumbs.db
 dist/
 build/
 *.egg
+
+node_modules
+.env
+package-lock.json
